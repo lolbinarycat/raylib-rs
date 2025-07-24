@@ -1597,6 +1597,10 @@ pub trait RaylibDraw {
             ffi::GetSplinePointBezierCubic(p1.into(), c2.into(), c3.into(), p4.into(), t).into()
         }
     }
+
+    fn as_dyn(&mut self) -> DynRaylibDraw<'_> {
+        DynRaylibDraw::new(self)
+    }
 }
 
 pub trait RaylibDraw3D {
@@ -2153,4 +2157,44 @@ pub trait RaylibDraw3D {
             );
         }
     }
+
+    #[inline]
+    fn as_dyn(&mut self) -> DynRaylibDraw3D<'_> {
+        DynRaylibDraw3D::new(self)
+    }
 }
+
+/// Equivelent to `&mut dyn RaylibDraw`.
+// SAFETY: must be constructed by mutably borrowing an implementor of RaylibDraw
+//
+// the field would be marked unsafe if unsafe fields were a thing.
+pub struct DynRaylibDraw<'a>(PhantomData<&'a mut ()>);
+
+impl<'a> DynRaylibDraw<'a> {
+    pub fn new<T: RaylibDraw + ?Sized>(inner: &'a mut T) -> Self {
+        let _ = inner;
+        DynRaylibDraw(PhantomData)
+    }
+}
+
+impl<'a> RaylibDraw for DynRaylibDraw<'a> {}
+
+/// Equivelent to `&mut dyn RaylibDraw3D`.
+// # Safety
+//
+// must be constructed by mutably borrowing an implementor of RaylibDraw3D
+//
+// the field would be marked unsafe if unsafe fields were a thing.
+//
+// we 
+pub struct DynRaylibDraw3D<'a>(PhantomData<&'a ()>);
+
+impl<'a> DynRaylibDraw3D<'a> {
+    pub fn new<T: RaylibDraw3D + ?Sized>(inner: &'a mut T) -> Self {
+        let _ = inner;
+        DynRaylibDraw3D(PhantomData)
+    }
+}
+
+impl<'a> RaylibDraw3D for DynRaylibDraw3D<'a> {}
+
